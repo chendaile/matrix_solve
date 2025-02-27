@@ -1,0 +1,75 @@
+<!-- templates/result.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Solution</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; }
+        .result-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .result-table th, .result-table td { 
+            border: 1px solid #ddd; 
+            padding: 12px; 
+            text-align: left;
+        }
+        .result-table th { 
+            background-color: #f8f9fa; 
+            font-weight: bold;
+        }
+        .matrix-row td { 
+            text-align: center; 
+            font-family: monospace;
+            padding: 8px;
+        }
+        .no-solution { 
+            color: #dc3545; 
+            padding: 15px;
+            border: 1px solid #dc3545;
+            border-radius: 4px;
+            background-color: #f8d7da;
+        }
+        .back-link { 
+            display: inline-block; 
+            margin-top: 20px; 
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h2>化简结果</h2>
+    
+    <table class="result-table">
+        <thead>
+            <tr>
+                <th style="width: 30%;">变量</th>
+                <th>表达式</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if non_solution %}
+                <tr>
+                    <td colspan="2">
+                        <div class="no-solution">⚠️ 方程组无解</div>
+                    </td>
+                </tr>
+            {% else %}
+                {% for item in solution %}
+                <tr>
+                    <td>{{ item.variable }}</td>
+                    <td>
+                        ${{ item.expression|safe }}$
+                    </td>
+                </tr>
+                {% endfor %}
+            {% endif %}
+        </tbody>
+    </table>
+
+    <a href="/" class="back-link">重新计算</a>
+</body>
+</html>
