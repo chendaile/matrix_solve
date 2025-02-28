@@ -62,7 +62,7 @@
                 <tr>
                     <td>{{ item.variable }}</td>
                     <td>
-                        ${{ item.expression|safe }}$
+                        {{ item.expression|safe }}
                     </td>
                 </tr>
                 {% endfor %}
