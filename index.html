@@ -24,9 +24,6 @@
 <body>
     <h1>线性方程组求解器</h1>
     <form method="POST">
-        {% if error %}
-        <div class="error">错误：{{ error }}</div>
-        {% endif %}
         <div class="input-section">
             <label>系数矩阵 (每行用空格分隔数字):</label>
             <textarea name="matrix" required placeholder="示例：

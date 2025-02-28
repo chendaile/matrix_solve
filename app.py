@@ -108,4 +108,4 @@ def index():
     return render_template('index.html')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)  # ← 关键修改这里
+    app.run(host='127.0.0.1', port=5000)  # 仅限本机访问
