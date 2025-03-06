@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>矩阵求逆结果</title>
+    <style>
+        .matrix-container {
+            margin: 30px auto;
+            max-width: 1200px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .matrix-table {
+            border-collapse: collapse;
+            margin: 20px 0;
+            width: auto;
+        }
+        .matrix-table th {
+            background-color: #3498db;
+            color: white;
+            padding: 12px;
+            min-width: 60px;
+        }
+        .matrix-table td {
+            padding: 10px 20px;
+            border: 1px solid #ecf0f1;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+        }
+        .matrix-header {
+            font-size: 1.2em;
+            color: #27ae60;
+            margin: 15px 0;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 8px 16px;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+        .symbol {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .warning-msg {
+            color: #e67e22;
+            padding: 10px;
+            background: #fcf3e0;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="matrix-container">
+        <h2>🔍 矩阵求逆结果</h2>
+        
+        <!-- 原矩阵显示 -->
+        <div class="matrix-header">原矩阵：</div>
+        <table class="matrix-table">
+            {% for row in matrix.split('\n') %}
+            <tr>
+                {% for num in row.strip().split() %}
+                <td>{{ num }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </table>
+
+        <!-- 逆矩阵显示 -->
+        <div class="matrix-header">逆矩阵：</div>
+        <table class="matrix-table">
+            {% for row in inverse %}
+            <tr>
+                {% for element in row %}
+                <td class="{% if element is symbol %}symbol{% endif %}">
+                    {# 处理数值和符号混合的情况 #}
+                    {% if element is number %}
+                        {{ "%0.4f"|format(element|float) }}
+                    {% else %}
+                        {# 显示符号表达式 #}
+                        {% if 'x' in element|string %}
+                             {{ element }} 
+                        {% else %}
+                            {{ element }}
+                        {% endif %}
+                    {% endif %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </table>
+
+        <!-- 非方阵警告 -->
+        {% if inverse|length != inverse[0]|length %}
+        <div class="warning-msg">
+            ⚠️ 注意：当前结果为广义逆矩阵（Moore-Penrose Pseudoinverse）
+        </div>
+        {% endif %}
+
+        <!-- 符号说明 -->
+        <div class="symbol-note">
+            <span class="symbol">红色项</span>表示含有自由变量的符号解
+        </div>
+
+        <a href="/" class="back-link">← 返回计算器</a>
+    </div>
+</body>
+</html>

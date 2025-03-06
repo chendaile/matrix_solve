@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>线性方程组解</title>
+    <style>
+        .result-container {
+            margin: 30px auto;
+            max-width: 800px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .solution-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .solution-table th {
+            background-color: #3498db;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        .solution-table td {
+            padding: 10px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        .variable-col {
+            width: 20%;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .expression-col {
+            font-family: monospace;
+            color: #27ae60;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 8px 16px;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="result-container">
+        <h2>🎯 方程解结果</h2>
+        
+        {% if solution %}
+        <table class="solution-table">
+            <thead>
+                <tr>
+                    <th>变量</th>
+                    <th>解表达式</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for i in range(solution['变量']|length) %}
+                <tr>
+                    <td class="variable-col">{{ solution['变量'][i] }}</td>
+                    <td class="expression-col">
+                        {% if solution['表达式'][i] is number %}
+                            {{ "%.4f"|format(solution['表达式'][i]) }}
+                        {% else %}
+                            {{ solution['表达式'][i] }}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        
+        <a href="/" class="back-link">← 返回计算器</a>
+        {% endif %}
+    </div>
+</body>
+</html>

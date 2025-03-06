@@ -3,32 +3,52 @@ from flask import Flask, request, render_template
 import numpy as np
 import sympy as sp
 from io import StringIO
-
+from gauss_elimination import perform_gaussian_elimination
+import jinja2
 app = Flask(__name__)
 
-def get_index(a_array, except_index):
-    for i in range(a_array.shape[0]):
-        if i in except_index:
-            continue
-        if a_array[i] != 0:
-            return i
-    return -1
+# Custom Jinja2 test for 'symbol'
+def is_symbol(value):
+    return isinstance(value, str) and not value.replace('.', '', 1).isdigit()
+app.jinja_env.tests['symbol'] = is_symbol
 
-def reshape(matrix, volumn_index):
-    matrix_copy = matrix.copy()
-    for i in range(matrix_copy.shape[0]):
-        if matrix_copy[i, volumn_index] != 0:
-            matrix_copy[i, :] = matrix_copy[i, :] / matrix_copy[i, volumn_index]
-    return matrix_copy
+# 新增的矩阵求逆处理函数
+def process_inverse(matrix_input):
+    try:
+        input_matrix = np.genfromtxt(StringIO(matrix_input), delimiter=' ')
+    except Exception as e:
+        return None, f"矩阵格式错误: {str(e)}"
+    
+    #build the matrix
+    Ax, Ay = input_matrix.shape
+    build_matrix = np.zeros((Ay**2, Ax * Ay))
+    b_matrix = np.zeros((Ay**2, 1))
+    for i in range(Ay):
+        for j in range(Ay):
+            b_matrix[Ay * i + j] = 1 if i == j else 0
+            for k in range(Ax):
+                build_matrix[Ay * i + j, i * Ax + k] = input_matrix[k, j]
 
-def delete_to_zero(matrix, theone_index, volumn_index):
-    theone_row = matrix[theone_index, :]
-    for i in range(matrix.shape[0]):
-        if i == theone_index or matrix[i, volumn_index] == 0:
-            continue
-        matrix[i, :] -= theone_row * matrix[i, volumn_index]
-    return matrix
+    #perform the gaussian elimination
+    reverse_matrix = np.zeros((Ay, Ax)).astype(object)
+    augmented_matrix, no_solve = perform_gaussian_elimination(build_matrix, b_matrix)
+    if no_solve:
+        return None, "矩阵不可逆"
+    else:
+        solve = {'变量': [], '表达式': []}
+        for col in range(augmented_matrix.shape[1]-1):
+            for row in range(augmented_matrix.shape[0]):
+                i = col // Ax
+                k = col % Ax
+                reverse_matrix[i, k] = sp.Symbol(f'x_{col+1}')
+                if augmented_matrix[row, col] == 1:
+                    reverse_matrix[i, k] = augmented_matrix[row, -1]
+                    solve['变量'].append(f'x_{i}{k}')
+                    solve['表达式'].append(augmented_matrix[row, -1])
+                    break
+        return reverse_matrix, None
 
+# 原有的线性方程组处理函数
 def process_matrix(matrix_input, b_input):
     try:
         matrix = np.genfromtxt(StringIO(matrix_input), delimiter=' ')
@@ -39,73 +59,53 @@ def process_matrix(matrix_input, b_input):
     if matrix.shape[0] != b.shape[0]:
         return None, "系数矩阵行数与常数项向量长度不匹配"
     
-    augmented = np.hstack((matrix, b)).astype(object)
-    except_index = []
-    
-    # 高斯消元主逻辑
-    for i in range(augmented.shape[1]-1):
-        theone_index = get_index(augmented[:, i], except_index)
-        if theone_index == -1:
-            continue
-        except_index.append(theone_index)
-        augmented = reshape(augmented, i)
-        augmented = delete_to_zero(augmented, theone_index, i)
-    
-    # 处理自由变量
-    J = []
-    for i in range(augmented.shape[1]-1):
-        for j in range(augmented.shape[0]):
-            if augmented[j, i] != 0 and j not in J:
-                J.append(j)
-                augmented[j, :] = augmented[j, :] / augmented[j, i]
-                break
-    
-    # 检查无解情况
-    non_solution = False
-    solution = []
-    for i in range(augmented.shape[0]):
-        non_zero_list = np.where(augmented[i, :-1] != 0)[0]
-        if len(non_zero_list) == 0 and augmented[i, -1] != 0:
-            non_solution = True
-            break
-            
-        # 构建解集
-        if len(non_zero_list) > 0:
-            var_index = non_zero_list[0]
-            expr = augmented[i, -1]
-            for col in non_zero_list[1:]:
-                expr -= augmented[i, col] * sp.Symbol(f'x_{col+1}')
-                augmented[i, col] = 0
-            solution.append({
-                'variable': f'x_{var_index+1}',
-                'expression': sp.latex(sp.simplify(expr))
-            })
-    
-    return {
-        'matrix': augmented,
-        'non_solution': non_solution,
-        'solution': solution
-    }, None
+    augmented_matrix, non_solution = perform_gaussian_elimination(matrix, b)
+
+    if non_solution:
+        return None, "方程组无解"
+    else:
+        # 构建解的输出
+        solution = {'变量': [], '表达式': []}
+        for col in range(augmented_matrix.shape[1]-1):
+            for row in range(augmented_matrix.shape[0]):
+                if augmented_matrix[row, col] == 1:
+                    solution['变量'].append(f'x_{col+1}')
+                    solution['表达式'].append(augmented_matrix[row, -1])
+                    break
+
+    return solution, None
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        matrix = request.form['matrix'].strip()
-        b_vector = request.form['b_vector'].strip()
-        
-        if not matrix or not b_vector:
-            return render_template('index.html', error="输入不能为空")
-        
-        result, error = process_matrix(matrix, b_vector)
-        if error:
-            return render_template('index.html', error=error)
-            
-        return render_template('result.html', 
-                             matrix=result['matrix'],
-                             non_solution=result['non_solution'],
-                             solution=result['solution'])
+        if 'b_vector' in request.form:  # 检测方程组求解表单
+            return handle_linear_system()
+        elif 'inverse_matrix' in request.form:  # 检测矩阵求逆表单
+            return handle_matrix_inverse()
     
     return render_template('index.html')
 
+def handle_linear_system():
+    matrix = request.form['matrix'].strip()
+    b_vector = request.form['b_vector'].strip()
+    
+    result, error = process_matrix(matrix, b_vector)
+    if error:
+        return render_template('index.html', error=error)
+        
+    return render_template('solution_result.html', 
+                         solution=result)
+
+def handle_matrix_inverse():
+    matrix_input = request.form['inverse_matrix'].strip()
+    
+    inverse, error = process_inverse(matrix_input)
+    if error:
+        return render_template('index.html', error=error)
+    
+    return render_template('inverse_result.html', 
+                         matrix=matrix_input,
+                         inverse=inverse)
+
 if __name__ == '__main__':
-    app.run(host='localhost', port=5000, debug=True)  # 添加 debug=True
+    app.run(host='0.0.0.0', port=5000, debug=True)
